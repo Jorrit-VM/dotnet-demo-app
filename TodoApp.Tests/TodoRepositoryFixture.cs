@@ -10,16 +10,28 @@ public class TodoRepositoryFixture
     private readonly string _connectionString;
 
     public TodoRepositoryFixture()
+{
+    var configuration = new ConfigurationBuilder()
+        .SetBasePath(AppContext.BaseDirectory)
+        .AddJsonFile("appsettings.Test.json", optional: false)
+        .Build();
+
+    _connectionString = configuration.GetConnectionString("TodoDb")
+        ?? throw new InvalidOperationException(
+            "Test connection string not configured.");
+
+    var connectionSettings =
+        new MySqlConnectionStringBuilder(_connectionString);
+
+    if (connectionSettings.Database != "todo_test_db")
     {
-        var configuration = new ConfigurationBuilder()
-            .AddJsonFile("appsettings.json")
-            .Build();
-
-        _connectionString = configuration.GetConnectionString("TodoDb")
-            ?? throw new InvalidOperationException("Test connection string not configured.");
-
-        Repository = new TodoRepository(configuration);
+        throw new InvalidOperationException(
+            $"Tests geblokkeerd: database is '{connectionSettings.Database}', " +
+            "maar moet 'todo_test_db' zijn.");
     }
+
+    Repository = new TodoRepository(configuration);
+}
 
     public async Task ResetDatabaseAsync()
     {
